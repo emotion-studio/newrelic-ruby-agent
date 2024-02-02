@@ -50,12 +50,16 @@ module NewRelic
 
       def initialize(events)
         @lock = Mutex.new
-        @buffer = self.class.buffer_class.new(NewRelic::Agent.config[self.class.capacity_key])
+        @buffer = create_buffer
         @enabled = self.class.enabled_fn ? self.class.enabled_fn.call : false
         @notified_full = false
         register_capacity_callback
         register_enabled_callback(events)
         after_initialize
+      end
+
+      def create_buffer
+        self.class.buffer_class.new(NewRelic::Agent.config[self.class.capacity_key])
       end
 
       # interface method for subclasses to override to provide post-initialization setup

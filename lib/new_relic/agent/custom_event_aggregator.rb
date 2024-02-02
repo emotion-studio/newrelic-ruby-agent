@@ -18,11 +18,21 @@ module NewRelic
       MAX_ATTRIBUTE_SIZE = 4095
       MAX_NAME_SIZE = 255
 
+      CATEGORIES = ['llm']
+
       named :CustomEventAggregator
       capacity_key :'custom_insights_events.max_samples_stored'
       enabled_key :'custom_insights_events.enabled'
 
-      def record(type, attributes)
+      def initialize(events)
+        super
+        @category_buffers = {}
+        CATEGORIES.each do |category|
+          @category_buffers[category] = create_buffer
+        end
+      end
+
+      def record(type, attributes, category = nil)
         unless attributes.is_a?(Hash)
           raise ArgumentError, "Expected Hash but got #{attributes.class}"
         end
@@ -37,12 +47,42 @@ module NewRelic
 
         priority = attributes[:priority] || rand
 
+
         stored = @lock.synchronize do
-          @buffer.append(priority: priority) do
+          (@category_buffers[category] || @buffer).append(priority: priority) do
             create_event(type, priority, attributes)
           end
         end
         stored
+      end
+
+      def harvest!
+        metadata = nil
+        samples = []
+        @lock.synchronize do
+          samples.concat(@buffer.to_a)
+          metadata = @buffer.metadata
+
+          @category_buffers.each do |_category, buffer|
+            samples.concat(buffer.to_a)
+            # do we wanna do something with extra category metadata?
+            # if so, should we do something separate or combine?
+            # metadata[:seen] += buffer.metadata[:seen]
+            # metadata[:capacity] += buffer.metadata[:capacity]
+          end
+
+          reset_buffer!
+        end
+        after_harvest(metadata)
+        [reservoir_metadata(metadata), samples]
+      end
+
+      def reset_buffer!
+        @buffer.reset!
+        @category_buffers.each do |_category, buffer|
+          buffer.reset!
+        end
+        @notified_full = false
       end
 
       private
