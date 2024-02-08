@@ -64,7 +64,8 @@ module NewRelic
           !env[ALREADY_INSTRUMENTED_KEY] &&
           html?(headers) &&
           !attachment?(headers) &&
-          !streaming?(env, headers)
+          !streaming?(env, headers) &&
+          !sidekiq?(env)
       end
 
       private
@@ -113,6 +114,10 @@ module NewRelic
 
         defined?(ActionController::Live) &&
           env['action_controller.instance'].class.included_modules.include?(ActionController::Live)
+      end
+
+      def sidekiq?(env)
+        env['SCRIPT_NAME'] == '/sidekiq'
       end
 
       def source_injection(source, insertion_index, js_to_inject)
