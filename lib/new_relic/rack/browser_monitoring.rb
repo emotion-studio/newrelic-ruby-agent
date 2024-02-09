@@ -65,7 +65,7 @@ module NewRelic
           html?(headers) &&
           !attachment?(headers) &&
           !streaming?(env, headers) &&
-          !sidekiq?(env)
+          !ignored_script?(env)
       end
 
       private
@@ -116,8 +116,10 @@ module NewRelic
           env['action_controller.instance'].class.included_modules.include?(ActionController::Live)
       end
 
-      def sidekiq?(env)
-        env['SCRIPT_NAME'] == '/sidekiq'
+      def ignored_script?(env)
+        NewRelic::Agent.config[:browser_monitoring.ignored_scripts].each do |script|
+          break false if env['SCRIPT_NAME'] == script
+        end
       end
 
       def source_injection(source, insertion_index, js_to_inject)
