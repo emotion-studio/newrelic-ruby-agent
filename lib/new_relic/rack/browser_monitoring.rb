@@ -117,8 +117,8 @@ module NewRelic
       end
 
       def ignored_script?(env)
-        NewRelic::Agent.config[:browser_monitoring.ignored_scripts].each do |script|
-          break false if env['SCRIPT_NAME'] == script
+        NewRelic::Agent.config[:'browser_monitoring.ignored_scripts'].each do |script|
+          break true if env['SCRIPT_NAME'] == script
         end
       end
 

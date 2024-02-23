@@ -741,9 +741,9 @@ module NewRelic
         :'browser_monitoring.ignored_scripts' => {
           :default => ['/sidekiq'],
           :public => true,
-          :type => Arrat,
+          :type => Array,
           :allowed_from_server => false,
-          :description => 'An array of SCRIPT_NAME header values where the browser monitoring Javascript header should not be injected. This header is defined in the [Rack environment](https://github.com/rack/rack/blob/main/SPEC.rdoc#the-environment-).'
+          :description => 'An array of SCRIPT_NAME environment values where the browser monitoring JavaScript header should not be injected. This header is defined in the [Rack environment](https://github.com/rack/rack/blob/main/SPEC.rdoc#the-environment-).'
         },
         # Transaction events
         :'transaction_events.enabled' => {
